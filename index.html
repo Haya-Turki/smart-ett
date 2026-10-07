@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>نظام مراقبة ETT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12202b; --ink-soft:#1c3040; --paper:#f4f7f8; --surface:#fff;
+  --line:#dce4e8; --line-strong:#c3d0d7; --muted:#5d6f7b;
+  --crit:#a92a21; --crit-bg:#fbeceb; --warn:#8f5b06; --warn-bg:#fdf3e2;
+  --ok:#12664f; --ok-bg:#e7f3ee; --accent:#1c6a86;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;font-size:15px;line-height:1.6}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none !important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.login{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.login__brand{background:var(--ink);color:#eef4f6;padding:48px;display:flex;flex-direction:column;justify-content:space-between}
+.login__brand h1{font-size:34px;font-weight:600;margin:0 0 12px;letter-spacing:-.4px}
+.login__brand p{color:#a9bcc6;max-width:38ch;margin:0}
+.pulse{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:40px}
+.pulse span{width:9px;background:#2c4d63;border-radius:2px}
+.login__form{display:flex;align-items:center;justify-content:center;padding:40px}
+.login__box{width:100%;max-width:380px}
+.login__box h2{font-size:22px;margin:0 0 4px;font-weight:600}
+.login__box .sub{color:var(--muted);margin:0 0 28px;font-size:14px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+input[type=text],input[type=password],input[type=number],select{width:100%;height:44px;padding:0 12px;font:inherit;font-size:14px;background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;color:var(--ink);margin-bottom:16px}
+.row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:13px}
+.row-between a{color:var(--accent)}
+.btn{width:100%;height:46px;border:none;border-radius:6px;background:var(--ink);color:#fff;font-size:15px;font-weight:500}
+.btn:hover{background:var(--ink-soft)}
+.btn:disabled{background:#9fb0ba;cursor:not-allowed}
+.btn--ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+.btn--ghost:hover{background:#eaf0f2}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:20px 0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.note{font-size:12px;color:var(--muted);text-align:center;margin-top:18px}
+
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.side{background:var(--ink);color:#d7e3e9;padding:24px 18px;display:flex;flex-direction:column;gap:24px}
+.side__logo{font-size:17px;font-weight:600;color:#fff}
+.side__logo small{display:block;font-size:12px;font-weight:400;color:#8fa7b4;margin-top:2px}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.side nav button{background:none;border:none;color:#c2d3db;text-align:right;font-size:14px;padding:10px 12px;border-radius:6px;width:100%}
+.side nav button:hover{background:#1c3040;color:#fff}
+.side nav button[aria-current=page]{background:#244053;color:#fff}
+.side__user{margin-top:auto;font-size:13px;color:#8fa7b4;border-top:1px solid #244053;padding-top:14px}
+main{padding:32px 36px 64px;max-width:1180px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px}
+.page-head h2{font-size:24px;margin:0 0 2px;font-weight:600;letter-spacing:-.3px}
+.page-head p{margin:0;color:var(--muted);font-size:14px}
+.back{background:none;border:none;color:var(--accent);font-size:14px;padding:0;margin-bottom:10px}
+.navbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.navbar .back{margin:0;border:1px solid var(--line-strong);border-radius:6px;padding:7px 14px;background:var(--surface)}
+.navbar .back:hover{background:#eaf0f2}
+
+.units{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.unit{display:grid;grid-template-columns:1fr 120px 190px 30px;align-items:center;gap:14px;width:100%;background:none;border:none;border-bottom:1px solid var(--line);padding:16px 20px;text-align:right;font-size:15px;color:var(--ink)}
+.unit:last-child{border-bottom:none}
+.unit:hover{background:#f0f5f7}
+.unit__name{font-weight:500}
+.unit__code,.unit__count{font-size:13px;color:var(--muted)}
+.chev{color:var(--muted)}
+
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar input,.toolbar select{margin:0;height:40px;width:auto;min-width:170px}
+.toolbar input{flex:1;min-width:220px}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{text-align:right;font-size:13px;font-weight:500;color:var(--muted);padding:12px 14px;background:#eef3f5;border-bottom:1px solid var(--line)}
+td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:14px}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f0f5f7}
+.pname{font-weight:500}
+.pmeta{font-size:12px;color:var(--muted)}
+.flags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;padding:3px 10px;border-radius:999px;white-space:nowrap;display:inline-block}
+.tag--crit{background:var(--crit-bg);color:var(--crit)}
+.tag--warn{background:var(--warn-bg);color:var(--warn)}
+.tag--ok{background:var(--ok-bg);color:var(--ok)}
+.empty{padding:28px;text-align:center;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px}
+
+.detail{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:18px}
+.panel--crit{border-color:#e6bab6}
+.panel h3{font-size:15px;margin:0 0 14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.stat span{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+.stat strong{font-size:19px;font-weight:600}
+.big{font-size:34px;font-weight:600;line-height:1.1}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border-bottom:none}
+.kv span{color:var(--muted)}
+.bar{height:8px;border-radius:999px;background:#e7edf0;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%}
+.germ{margin-bottom:11px}
+.germ__top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.germ__top em{font-style:normal;direction:ltr;unicode-bidi:isolate}
+.germ .bar{margin-top:0;height:6px}
+.task{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.task:last-of-type{border-bottom:none}
+.task input{margin:5px 0 0;width:16px;height:16px}
+.task p{margin:0;font-size:14px}
+.task small{color:var(--muted);font-size:12px}
+.task.done p{text-decoration:line-through;color:var(--muted)}
+.disclaimer{font-size:12px;color:var(--muted);margin:14px 0 0}
+.actions{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap}
+.actions .btn{width:auto;padding:0 20px;height:44px}
+.log{font-size:13px;color:var(--muted)}
+.log div{padding:7px 0;border-bottom:1px solid var(--line)}
+.log div:last-child{border-bottom:none}
+
+.modal{position:fixed;inset:0;background:rgba(10,22,30,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:40}
+.modal__box{background:var(--surface);border-radius:12px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+.modal__box h3{margin:0 0 18px;font-size:18px;font-weight:600}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;z-index:50;box-shadow:0 6px 20px rgba(10,22,30,.25)}
+@media (max-width:900px){
+  .login{grid-template-columns:1fr}.login__brand{display:none}
+  .shell{grid-template-columns:1fr}
+  .side{flex-direction:row;align-items:center;gap:14px;padding:14px 18px}
+  .side__user{display:none}.side nav{flex-direction:row;margin-right:auto}
+  main{padding:20px}
+  .detail{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .unit{grid-template-columns:1fr auto}.unit__count,.chev{display:none}
+  table{display:block;overflow-x:auto;white-space:nowrap}
+}
+</style>
+</head>
+<body>
+
+<section class="login" id="view-login">
+  <div class="login__brand">
+    <div>
+      <h1>نظام مراقبة ETT</h1>
+      <p>متابعة الأنبوب الحنجري في العناية المركزة: ضغط الـ cuff، الإفرازات، واحتمال العدوى — في مكان واحد.</p>
+    </div>
+    <div class="pulse" aria-hidden="true">
+      <span style="height:28%"></span><span style="height:54%"></span><span style="height:38%"></span>
+      <span style="height:82%"></span><span style="height:46%"></span><span style="height:66%"></span>
+      <span style="height:30%"></span><span style="height:58%"></span><span style="height:44%"></span>
+      <span style="height:74%"></span><span style="height:36%"></span><span style="height:50%"></span>
+    </div>
+  </div>
+  <div class="login__form">
+    <div class="login__box">
+      <h2>تسجيل الدخول</h2>
+      <p class="sub">أدخل معرّف المستشفى للمتابعة</p>
+      <label for="facility">المنشأة</label>
+      <select id="facility"><option>مستشفى الملك فهد التخصصي</option><option>مجمع الرياض الطبي</option></select>
+      <label for="hid">معرّف المستشفى</label>
+      <input id="hid" type="text" placeholder="HSP-10294" value="HSP-10294" />
+      <label for="pw">كلمة المرور</label>
+      <input id="pw" type="password" value="........" />
+      <div class="row-between">
+        <label style="display:flex;align-items:center;gap:6px;margin:0;color:var(--muted)"><input type="checkbox" checked style="margin:0" /> تذكّرني</label>
+        <a href="#" onclick="return false">نسيت كلمة المرور؟</a>
+      </div>
+      <button class="btn" id="btn-login">دخول</button>
+      <div class="divider">أو</div>
+      <button class="btn btn--ghost" id="btn-sso">الدخول الموحّد للمنشأة</button>
+      <p class="note">الحسابات تُنشأ من إدارة النظام</p>
+    </div>
+  </div>
+</section>
+
+<div class="shell hidden" id="app">
+  <aside class="side">
+    <div class="side__logo">نظام مراقبة ETT<small id="facility-name">مستشفى الملك فهد التخصصي</small></div>
+    <nav>
+      <button data-nav="units" aria-current="page">الأقسام</button>
+      <button data-nav="alerts">التنبيهات</button>
+    </nav>
+    <div class="side__user">م. سالم الحربي<br>ممرض عناية مركزة</div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script>
+/* ---------- البيانات ---------- */
+var NOW = new Date();
+function P(name,mrn,bed,size,depth,days,cuff,amount,color,texture,temp,spo2,mins){
+  return {name:name,mrn:mrn,bed:bed,size:size,depth:depth,days:days,cuff:cuff,
+    amount:amount,color:color,texture:texture,temp:temp,spo2:spo2,mins:mins,
+    suctions:4,trend:amount==="غزيرة"?"متزايدة":"مستقرة",
+    cultureSent:false,escalated:false,log:[],done:{}};
+}
+var DEPTS=[
+ {id:"adult",name:"العناية المركزة للكبار",code:"Adult ICU",germs:[40,22,14,10,6,5,3],patients:[
+   P("عبدالله الشمري",48219,"ICU-04",8.0,23,15,32,"غزيرة","أصفر مخضر","لزج",38.4,96,42),
+   P("فهد المطيري",48033,"ICU-09",8.0,24,17,28,"غزيرة","أصفر","لزج",38.1,88,310),
+   P("سارة العتيبي",48107,"ICU-02",7.0,21,12,18,"متوسطة","أبيض","متوسط",37.2,95,95),
+   P("محمد القحطاني",47990,"ICU-07",7.5,22,9,24,"قليلة","صافية","سائل",36.8,97,60),
+   P("نورة الدوسري",48250,"ICU-01",7.0,20,6,22,"قليلة","صافية","سائل",36.9,98,150),
+   P("خالد الزهراني",48260,"ICU-03",8.0,23,4,26,"متوسطة","أبيض","متوسط",37.4,96,80),
+   P("منى السبيعي",48271,"ICU-05",7.0,21,8,25,"قليلة","صافية","سائل",36.7,99,110),
+   P("سلطان الحربي",48288,"ICU-06",8.0,24,21,34,"غزيرة","أصفر مخضر","لزج",38.6,93,55),
+   P("هند العنزي",48291,"ICU-08",7.0,20,3,23,"قليلة","بيضاء","سائل",37.0,98,70),
+   P("ماجد الغامدي",48302,"ICU-10",7.5,22,11,27,"متوسطة","أصفر","متوسط",37.8,95,130),
+   P("ريم الشهري",48310,"ICU-11",7.0,21,5,24,"قليلة","صافية","سائل",36.6,98,45),
+   P("بدر المالكي",48318,"ICU-12",8.0,23,7,26,"متوسطة","أبيض","متوسط",37.1,96,190)
+ ]},
+ {id:"picu",name:"العناية المركزة للأطفال",code:"PICU",germs:[30,20,10,25,8,4,3],patients:[
+   P("يزيد العمري",48401,"P-01",5.5,17,6,22,"متوسطة","أصفر","متوسط",37.9,95,70),
+   P("جود الدوسري",48407,"P-02",5.0,16,3,24,"قليلة","صافية","سائل",36.8,98,50),
+   P("تركي الحارثي",48412,"P-03",6.0,18,9,31,"غزيرة","أصفر مخضر","لزج",38.2,94,85),
+   P("لمى القرني",48418,"P-04",4.5,15,2,23,"قليلة","صافية","سائل",37.0,99,40),
+   P("سعود الرشيدي",48423,"P-05",5.5,17,12,25,"متوسطة","أبيض","متوسط",37.3,96,140),
+   P("رغد المطيري",48430,"P-06",5.0,16,4,22,"قليلة","صافية","سائل",36.9,98,65),
+   P("فيصل النفيعي",48436,"P-07",6.0,18,7,26,"متوسطة","أصفر","متوسط",37.6,95,120)
+ ]},
+ {id:"nicu",name:"عناية الخدج وحديثي الولادة",code:"NICU",germs:[15,25,10,30,10,7,3],patients:[
+   P("نواف الصاعدي",48501,"N-01",3.5,9,5,null,"متوسطة","أبيض","متوسط",37.4,94,60),
+   P("ملاك العتيبي",48505,"N-02",3.0,8,12,null,"غزيرة","أصفر مخضر","لزج",38.3,91,75),
+   P("ريان السلمي",48509,"N-03",3.5,9,3,null,"قليلة","صافية","سائل",36.9,97,45),
+   P("لين الحربي",48513,"N-04",3.0,8,7,null,"متوسطة","أصفر","متوسط",37.7,95,180),
+   P("عمر البقمي",48517,"N-05",3.5,10,2,null,"قليلة","صافية","سائل",37.1,98,35),
+   P("جنى الشمري",48521,"N-06",3.0,8,9,null,"متوسطة","أبيض","متوسط",37.2,96,100),
+   P("سالم الزهراني",48525,"N-07",3.5,9,4,null,"قليلة","صافية","سائل",36.8,97,55),
+   P("دانة القحطاني",48529,"N-08",3.0,8,6,null,"متوسطة","أصفر","لزج",37.9,94,130),
+   P("فارس العنزي",48533,"N-09",3.5,9,1,null,"قليلة","صافية","سائل",37.0,99,25)
+ ]},
+ {id:"ccu",name:"العناية القلبية",code:"CCU",germs:[35,22,12,18,6,4,3],patients:[
+   P("عوض الشهراني",48601,"C-01",8.0,23,3,25,"قليلة","صافية","سائل",36.9,97,50),
+   P("فاطمة الجهني",48605,"C-02",7.0,21,5,26,"متوسطة","أبيض","متوسط",37.3,96,90),
+   P("مساعد الدوسري",48609,"C-03",7.5,22,2,24,"قليلة","صافية","سائل",36.7,98,40),
+   P("أمل الخالدي",48613,"C-04",7.0,21,8,29,"متوسطة","أصفر","متوسط",37.8,95,160)
+ ]},
+ {id:"er",name:"الطوارئ",code:"ER",germs:[30,20,10,25,8,4,3],patients:[
+   P("راكان العتيبي",48701,"ER-02",8.0,23,1,24,"قليلة","صافية","سائل",37.0,97,20),
+   P("شهد الحربي",48704,"ER-05",7.0,21,1,22,"قليلة","بيضاء","سائل",37.2,96,30),
+   P("ناصر السهلي",48707,"ER-06",7.5,22,2,31,"متوسطة","أصفر","متوسط",38.0,94,65)
+ ]},
+ {id:"or",name:"العمليات والإفاقة",code:"OR / PACU",germs:[32,20,12,20,8,5,3],patients:[
+   P("عادل الرشيد",48801,"PACU-1",8.0,23,1,25,"قليلة","صافية","سائل",36.8,98,15),
+   P("منيرة الفهيد",48805,"PACU-2",7.0,21,1,23,"قليلة","صافية","سائل",36.9,99,25)
+ ]}
+];
+var GERM_NAMES=["Pseudomonas aeruginosa","Klebsiella pneumoniae","Acinetobacter baumannii","Staphylococcus aureus / MRSA","Enterobacter spp.","Escherichia coli","Proteus spp."];
+
+/* ---------- الحسابات ---------- */
+function infectionScore(p){
+  var s=5;
+  s+= p.amount==="غزيرة"?25 : p.amount==="متوسطة"?12 : 0;
+  s+= p.color==="أصفر مخضر"?20 : p.color==="أصفر"?12 : p.color==="بيضاء"?6 : 0;
+  s+= p.temp>=38?15 : p.temp>=37.5?7 : 0;
+  s+= p.days>10?10 : p.days>5?5 : 0;
+  s+= p.trend==="متزايدة"?3:0;
+  return Math.min(92,Math.round(s));
+}
+function cuffState(p){
+  if(p.cuff===null) return null;
+  if(p.cuff>=32) return {level:"crit",label:"cuff مرتفع"};
+  if(p.cuff>30) return {level:"warn",label:"cuff مرتفع"};
+  if(p.cuff<=17) return {level:"crit",label:"cuff منخفض"};
+  if(p.cuff<20) return {level:"warn",label:"cuff منخفض"};
+  return null;
+}
+function flagsOf(p){
+  var f=[],inf=infectionScore(p),cs=cuffState(p);
+  if(cs) f.push({label:cs.label,level:cs.level});
+  if(p.amount==="غزيرة") f.push({label:"إفرازات غزيرة",level:"warn"});
+  if(inf>=70) f.push({label:"اشتباه عدوى",level:"crit"});
+  else if(inf>=45) f.push({label:"مراقبة عدوى",level:"warn"});
+  if(p.spo2<90) f.push({label:"تشبّع منخفض",level:"crit"});
+  else if(p.spo2<93) f.push({label:"تشبّع حدّي",level:"warn"});
+  if(p.days>=14) f.push({label:"تنبيب "+p.days+" يوم",level:"warn"});
+  if(p.mins>240) f.push({label:"تقييم متأخر",level:"warn"});
+  if(p.cultureSent) f.push({label:"زراعة مرسلة",level:"ok"});
+  return f;
+}
+function statusOf(p){
+  var f=flagsOf(p),lvl="ok";
+  f.forEach(function(x){ if(x.level==="crit") lvl="crit"; else if(x.level==="warn"&&lvl!=="crit") lvl="warn"; });
+  return lvl;
+}
+function statusLabel(s){ return s==="crit"?"حرج":s==="warn"?"تنبيه":"مستقر"; }
+function tasksOf(p){
+  var t=[],inf=infectionScore(p),cs=cuffState(p);
+  if(p.amount==="غزيرة") t.push({id:"suction",title:"شفط البلغم فوراً",note:"إفرازات غزيرة · آخر شفط "+clock(p.mins+20),urg:"عاجل"});
+  if(cs&&cs.label==="cuff مرتفع") t.push({id:"cuff",title:"معايرة ضغط الـ cuff",note:"خفضه إلى 20–30 وإعادة القياس",urg:"عاجل"});
+  if(cs&&cs.label==="cuff منخفض") t.push({id:"cuff",title:"نفخ الكفة ومعايرتها",note:"رفعه إلى 20–30 لمنع التسريب",urg:"عاجل"});
+  if(inf>=70&&!p.cultureSent) t.push({id:"culture",title:"أخذ عينة قشع للزراعة",note:"أثناء الشفط · قبل أي تغيير علاجي",urg:"خلال ساعة"});
+  else if(inf>=45&&!p.cultureSent) t.push({id:"culture",title:"أخذ عينة قشع للزراعة",note:"خلال المناوبة الحالية",urg:"خلال المناوبة"});
+  if(p.spo2<93) t.push({id:"o2",title:"مراجعة إعدادات التهوية والأكسجة",note:"التشبّع "+p.spo2+"%",urg:"عاجل"});
+  if(inf>=70&&!p.escalated) t.push({id:"notify",title:"إبلاغ الطبيب المناوب",note:"احتمال عدوى مرتفع",urg:"خلال ساعة"});
+  if(p.mins>240) t.push({id:"assess",title:"تسجيل التقييم المتأخر",note:"مضى "+Math.round(p.mins/60)+" ساعات على آخر تقييم",urg:"عاجل"});
+  if(p.days>=14) t.push({id:"wean",title:"مناقشة الفطام أو فغر الرغامى",note:"مضى "+p.days+" يوماً على التنبيب",urg:"خلال المناوبة"});
+  if(!t.length) t.push({id:"routine",title:"متابعة روتينية كل 4 ساعات",note:"القيم ضمن النطاق المعتمد",urg:"عادي"});
+  return t;
+}
+function germsOf(d,p){
+  var w=d.germs.slice(),sum=w.reduce(function(a,b){return a+b;},0);
+  return GERM_NAMES.map(function(n,i){ return {name:n,pct:Math.round(w[i]/sum*100)}; })
+    .sort(function(a,b){return b.pct-a.pct;});
+}
+function clock(minsAgo){
+  var d=new Date(NOW.getTime()-minsAgo*60000);
+  return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+/* ---------- الحالة ---------- */
+var state={view:"units",dept:null,patient:null,q:"",filter:"all",stack:[]};
+function deptById(id){ return DEPTS.filter(function(d){return d.id===id;})[0]; }
+function snapshot(){
+  return {view:state.view,dept:state.dept,patient:state.patient,q:state.q,filter:state.filter};
+}
+function restore(s){
+  state.view=s.view; state.dept=s.dept; state.patient=s.patient; state.q=s.q; state.filter=s.filter;
+}
+function navigate(changes){
+  state.stack.push(snapshot());
+  for(var k in changes) state[k]=changes[k];
+  render();
+}
+function goBack(){
+  if(state.stack.length){ restore(state.stack.pop()); render(); return; }
+  if(state.view==="detail"&&state.dept) state.view="patients";
+  else state.view="units";
+  render();
+}
+function crumbs(){
+  if(state.view==="units") return "";
+  return '<div class="navbar"><button class="back" data-goback>‹ رجوع</button></div>';
+}
+function toast(msg){
+  var r=document.getElementById("toast-root");
+  r.innerHTML='<div class="toast">'+esc(msg)+'</div>';
+  clearTimeout(window._t); window._t=setTimeout(function(){r.innerHTML="";},2600);
+}
+
+/* ---------- العرض ---------- */
+function render(){
+  var m=document.getElementById("main");
+  if(state.view==="units") m.innerHTML=renderUnits();
+  else if(state.view==="patients") m.innerHTML=renderPatients();
+  else if(state.view==="detail") m.innerHTML=renderDetail();
+  else if(state.view==="alerts") m.innerHTML=renderAlerts();
+  document.querySelectorAll(".side nav button").forEach(function(b){
+    if(b.dataset.nav===state.view||(state.view!=="alerts"&&b.dataset.nav==="units")) b.setAttribute("aria-current","page");
+    else b.removeAttribute("aria-current");
+  });
+  window.scrollTo(0,0);
+}
+function renderUnits(){
+  var rows=DEPTS.map(function(d){
+    var c=0,w=0;
+    d.patients.forEach(function(p){var s=statusOf(p); if(s==="crit")c++; else if(s==="warn")w++;});
+    var tags=(c?'<span class="tag tag--crit">'+c+' حرج</span> ':'')+(w?'<span class="tag tag--warn">'+w+' تنبيه</span>':'');
+    if(!tags) tags='<span class="tag tag--ok">مستقر</span>';
+    return '<button class="unit" data-dept="'+d.id+'">'+
+      '<div><div class="unit__name">'+esc(d.name)+'</div><div class="unit__code">'+esc(d.code)+'</div></div>'+
+      '<div class="unit__count">'+d.patients.length+' مريض</div><div>'+tags+'</div><div class="chev">‹</div></button>';
+  }).join("");
+  var total=DEPTS.reduce(function(a,d){return a+d.patients.length;},0);
+  return '<div class="page-head"><div><h2>الأقسام</h2><p>'+total+' مريضاً على أنبوب حنجري · اختر القسم لعرض المرضى</p></div></div><div class="units">'+rows+'</div>';
+}
+function renderPatients(){
+  var d=state.dept, q=state.q.trim(), f=state.filter;
+  var list=d.patients.filter(function(p){
+    var s=statusOf(p);
+    if(f!=="all"&&s!==f) return false;
+    if(q&&p.name.indexOf(q)===-1&&String(p.mrn).indexOf(q)===-1&&p.bed.indexOf(q)===-1) return false;
+    return true;
+  }).sort(function(a,b){
+    var o={crit:0,warn:1,ok:2};
+    return o[statusOf(a)]-o[statusOf(b)];
+  });
+  var counts={all:d.patients.length,crit:0,warn:0,ok:0};
+  d.patients.forEach(function(p){counts[statusOf(p)]++;});
+  var rows=list.map(function(p){
+    var s=statusOf(p);
+    var flags=flagsOf(p).map(function(x){return '<span class="tag tag--'+x.level+'">'+esc(x.label)+'</span>';}).join("");
+    return '<tr data-mrn="'+p.mrn+'"><td><div class="pname">'+esc(p.name)+'</div><div class="pmeta">ملف '+p.mrn+'</div></td>'+
+      '<td>'+esc(p.bed)+'</td><td>'+p.size.toFixed(1)+'</td><td>'+p.depth+' سم</td><td>'+p.days+' يوم</td>'+
+      '<td'+(p.mins>240?' style="color:var(--crit)"':'')+'>'+(p.mins>240?"متأخر":clock(p.mins))+'</td>'+
+      '<td><div class="flags">'+flags+'</div></td>'+
+      '<td><span class="tag tag--'+s+'">'+statusLabel(s)+'</span></td></tr>';
+  }).join("");
+  var body=rows?'<table><thead><tr><th>المريض</th><th>السرير</th><th>المقاس</th><th>العمق</th><th>التنبيب</th><th>آخر تقييم</th><th>الملاحظات</th><th>الحالة</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    :'<div class="empty">لا يوجد مرضى مطابقون لهذا البحث</div>';
+  return crumbs()+
+    '<div class="page-head"><div><h2>'+esc(d.name)+'</h2><p>'+esc(d.code)+' · '+d.patients.length+' مريض على ETT</p></div></div>'+
+    '<div class="toolbar"><input id="q" type="text" placeholder="ابحث بالاسم أو رقم الملف أو السرير" value="'+esc(state.q)+'" />'+
+    '<select id="filter">'+
+      '<option value="all"'+(f==="all"?" selected":"")+'>كل الحالات ('+counts.all+')</option>'+
+      '<option value="crit"'+(f==="crit"?" selected":"")+'>حرج ('+counts.crit+')</option>'+
+      '<option value="warn"'+(f==="warn"?" selected":"")+'>تنبيه ('+counts.warn+')</option>'+
+      '<option value="ok"'+(f==="ok"?" selected":"")+'>مستقر ('+counts.ok+')</option>'+
+    '</select></div>'+body;
+}
+function renderDetail(){
+  var d=state.dept,p=state.patient,s=statusOf(p),inf=infectionScore(p),cs=cuffState(p),tasks=tasksOf(p);
+  var infColor=inf>=70?"var(--crit)":inf>=45?"var(--warn)":"var(--ok)";
+  var cuffPanel;
+  if(p.cuff===null){
+    cuffPanel='<div class="panel"><h3>ضغط الـ cuff <span class="tag tag--ok">لا ينطبق</span></h3>'+
+      '<p style="margin:0;color:var(--muted);font-size:14px">أنبوب بدون كفة (uncuffed) — المتابعة تعتمد على التسريب حول الأنبوب وعمق التثبيت.</p>'+
+      '<div class="kv" style="margin-top:12px"><span>العمق عند الشفة</span><b>'+p.depth+' سم</b></div></div>';
+  } else {
+    var lvl=cs?cs.level:"ok", col=lvl==="crit"?"var(--crit)":lvl==="warn"?"var(--warn)":"var(--ok)";
+    cuffPanel='<div class="panel'+(lvl==="crit"?" panel--crit":"")+'"><h3>ضغط الـ cuff <span class="tag tag--'+lvl+'">'+(cs?esc(cs.label.replace("cuff ","")):"ضمن النطاق")+'</span></h3>'+
+      '<div style="display:flex;align-items:baseline;gap:10px"><div class="big" style="color:'+col+'">'+p.cuff+'</div>'+
+      '<div style="color:var(--muted);font-size:14px">cmH₂O · النطاق المعتمد 20–30</div></div>'+
+      '<div class="bar"><i style="width:'+Math.min(100,Math.round(p.cuff/36*100))+'%;background:'+col+'"></i></div>'+
+      '<div class="kv" style="margin-top:12px"><span>آخر قياس</span><b>'+(p.mins>240?"متأخر":clock(p.mins))+' · م. سالم</b></div></div>';
+  }
+  var germs=germsOf(d,p).map(function(g,i){
+    var col=i===0?"var(--crit)":g.pct>=10?"var(--warn)":"#b8c6cd";
+    return '<div class="germ"><div class="germ__top"><em>'+esc(g.name)+'</em><b>'+g.pct+'%</b></div>'+
+      '<div class="bar"><i style="width:'+g.pct+'%;background:'+col+'"></i></div></div>';
+  }).join("");
+  var taskHtml=tasks.map(function(t){
+    var done=!!p.done[t.id];
+    var ucls=t.urg==="عاجل"?"crit":t.urg==="عادي"?"ok":"warn";
+    return '<div class="task'+(done?" done":"")+'"><input type="checkbox" data-task="'+t.id+'"'+(done?" checked":"")+' />'+
+      '<div style="flex:1"><p>'+esc(t.title)+'</p><small>'+esc(t.note)+'</small></div>'+
+      '<span class="tag tag--'+ucls+'">'+esc(t.urg)+'</span></div>';
+  }).join("");
+  var pending=tasks.filter(function(t){return !p.done[t.id];}).length;
+  var logHtml=p.log.length?p.log.map(function(l){return '<div>'+esc(l)+'</div>';}).join(""):'<div>لا توجد إجراءات مسجّلة بعد</div>';
+  var order={crit:0,warn:1,ok:2};
+  var ordered=d.patients.slice().sort(function(a,b){return order[statusOf(a)]-order[statusOf(b)];});
+  var pIdx=ordered.indexOf(p);
+  var next=pIdx>-1&&pIdx<ordered.length-1?ordered[pIdx+1]:null;
+  return crumbs()+
+   '<div class="page-head"><div><h2>'+esc(p.name)+'</h2><p>'+esc(d.code)+' · سرير '+esc(p.bed)+' · ملف '+p.mrn+'</p></div>'+
+   '<span class="tag tag--'+s+'">'+statusLabel(s)+'</span></div>'+
+   '<div class="stats">'+
+     '<div class="stat"><span>مقاس الأنبوب</span><strong>'+p.size.toFixed(1)+'</strong></div>'+
+     '<div class="stat"><span>العمق عند الشفة</span><strong>'+p.depth+' سم</strong></div>'+
+     '<div class="stat"><span>مدة التنبيب</span><strong>'+p.days+' يوم</strong></div>'+
+     '<div class="stat"><span>الحرارة · التشبّع</span><strong>'+p.temp.toFixed(1)+'° · '+p.spo2+'%</strong></div>'+
+   '</div>'+
+   '<div class="detail"><div>'+cuffPanel+
+     '<div class="panel"><h3>الإفرازات <span class="tag tag--'+(p.amount==="غزيرة"?"warn":"ok")+'">'+esc(p.amount)+'</span></h3>'+
+       '<div class="kv"><span>اللون</span><b>'+esc(p.color)+'</b></div>'+
+       '<div class="kv"><span>القوام</span><b>'+esc(p.texture)+'</b></div>'+
+       '<div class="kv"><span>آخر شفط</span><b>'+clock(p.mins+20)+'</b></div>'+
+       '<div class="kv"><span>مرات الشفط · 24 ساعة</span><b>'+p.suctions+' · '+esc(p.trend)+'</b></div></div>'+
+     '<div class="panel"><h3>سجل الإجراءات</h3><div class="log">'+logHtml+'</div></div>'+
+   '</div><div>'+
+     '<div class="panel'+(inf>=70?" panel--crit":"")+'"><h3>احتمال وجود عدوى <span class="tag tag--'+(inf>=70?"crit":inf>=45?"warn":"ok")+'">'+(inf>=70?"مرتفع":inf>=45?"متوسط":"منخفض")+'</span></h3>'+
+       '<div style="display:flex;align-items:baseline;gap:10px"><div class="big" style="color:'+infColor+'">'+inf+'%</div>'+
+       '<div style="color:var(--muted);font-size:14px">'+esc(p.amount+" · "+p.color+" · حرارة "+p.temp.toFixed(1)+"°")+'</div></div>'+
+       '<div class="bar"><i style="width:'+inf+'%;background:'+infColor+'"></i></div></div>'+
+     '<div class="panel"><h3>الجراثيم المرجّحة <span class="tag tag--'+(p.cultureSent?"ok":"warn")+'">'+(p.cultureSent?"الزراعة قيد الانتظار":"قبل الزراعة")+'</span></h3>'+germs+'</div>'+
+     '<div class="panel'+(pending&&s==="crit"?" panel--crit":"")+'"><h3>الإجراءات المطلوبة <span class="tag tag--'+(pending?"crit":"ok")+'">'+(pending?pending+" مهام":"مكتملة")+'</span></h3>'+
+       taskHtml+'<p class="disclaimer">توصيات مساعدة للقرار وفق بروتوكول القسم، لا تُعد تشخيصاً ولا بديلاً عن الزراعة.</p></div>'+
+   '</div></div>'+
+   '<div class="actions"><button class="btn" id="btn-apply"'+(pending===tasks.length?' disabled':'')+'>تسجيل تنفيذ الإجراءات</button>'+
+   '<button class="btn btn--ghost" id="btn-assess">تسجيل تقييم جديد</button>'+
+   '<button class="btn btn--ghost" id="btn-escalate"'+(p.escalated?' disabled':'')+'>'+(p.escalated?"تم التصعيد":"تصعيد للطبيب المناوب")+'</button></div>'+
+   (next?'<div class="actions" style="margin-top:14px;border-top:1px solid var(--line);padding-top:16px">'+
+     '<button class="btn btn--ghost" data-next="'+next.mrn+'">المريض التالي · '+esc(next.name)+' ‹</button></div>':'');
+}
+function renderAlerts(){
+  var rows=[];
+  DEPTS.forEach(function(d){ d.patients.forEach(function(p){
+    var s=statusOf(p); if(s==="ok") return;
+    rows.push({d:d,p:p,s:s});
+  });});
+  rows.sort(function(a,b){ return (a.s==="crit"?0:1)-(b.s==="crit"?0:1); });
+  if(!rows.length) return crumbs()+'<div class="page-head"><div><h2>التنبيهات</h2><p>لا توجد حالات تحتاج تدخلاً الآن</p></div></div><div class="empty">كل المرضى ضمن النطاق المعتمد</div>';
+  var html=rows.map(function(r){
+    var flags=flagsOf(r.p).map(function(x){return '<span class="tag tag--'+x.level+'">'+esc(x.label)+'</span>';}).join("");
+    return '<tr data-alert="'+r.d.id+':'+r.p.mrn+'"><td><div class="pname">'+esc(r.p.name)+'</div><div class="pmeta">'+esc(r.d.code)+' · '+esc(r.p.bed)+'</div></td>'+
+      '<td><div class="flags">'+flags+'</div></td><td><span class="tag tag--'+r.s+'">'+statusLabel(r.s)+'</span></td></tr>';
+  }).join("");
+  return crumbs()+'<div class="page-head"><div><h2>التنبيهات</h2><p>'+rows.length+' حالة تحتاج متابعة في كل الأقسام</p></div></div>'+
+    '<table><thead><tr><th>المريض</th><th>الملاحظات</th><th>الحالة</th></tr></thead><tbody>'+html+'</tbody></table>';
+}
+
+/* ---------- الإجراءات ---------- */
+function applyActions(){
+  var p=state.patient,tasks=tasksOf(p),done=[];
+  tasks.forEach(function(t){
+    if(!p.done[t.id]) return;
+    done.push(t.title);
+    if(t.id==="suction"){ p.amount="قليلة"; p.color=(p.color==="أصفر مخضر"?"أصفر":"صافية"); p.texture="سائل"; p.suctions++; p.trend="مستقرة"; }
+    if(t.id==="cuff"){ p.cuff=24; }
+    if(t.id==="culture"){ p.cultureSent=true; }
+    if(t.id==="notify"){ p.escalated=true; }
+    if(t.id==="o2"){ p.spo2=Math.min(99,p.spo2+5); }
+  });
+  if(!done.length){ toast("أشّر على المهام المنفّذة أولاً"); return; }
+  p.mins=0; p.done={};
+  p.log.unshift(clock(0)+" · م. سالم — "+done.join("، "));
+  toast("تم تسجيل "+done.length+" إجراء وتحديث حالة المريض");
+  render();
+}
+function openAssess(){
+  var p=state.patient;
+  var cuffField=p.cuff===null?'':'<label for="a-cuff">ضغط الـ cuff (cmH₂O)</label><input id="a-cuff" type="number" value="'+p.cuff+'" min="0" max="60" />';
+  document.getElementById("modal-root").innerHTML=
+   '<div class="modal" id="modal"><div class="modal__box"><h3>تسجيل تقييم جديد — '+esc(p.name)+'</h3>'+
+   cuffField+
+   '<label for="a-amount">كمية الإفرازات</label><select id="a-amount">'+
+     ['قليلة','متوسطة','غزيرة'].map(function(o){return '<option'+(p.amount===o?" selected":"")+'>'+o+'</option>';}).join("")+'</select>'+
+   '<label for="a-color">اللون</label><select id="a-color">'+
+     ['صافية','بيضاء','أصفر','أصفر مخضر'].map(function(o){return '<option'+(p.color===o?" selected":"")+'>'+o+'</option>';}).join("")+'</select>'+
+   '<label for="a-texture">القوام</label><select id="a-texture">'+
+     ['سائل','متوسط','لزج'].map(function(o){return '<option'+(p.texture===o?" selected":"")+'>'+o+'</option>';}).join("")+'</select>'+
+   '<label for="a-temp">درجة الحرارة</label><input id="a-temp" type="number" step="0.1" value="'+p.temp.toFixed(1)+'" />'+
+   '<label for="a-spo2">التشبّع %</label><input id="a-spo2" type="number" value="'+p.spo2+'" min="50" max="100" />'+
+   '<div class="actions"><button class="btn" id="a-save">حفظ التقييم</button>'+
+   '<button class="btn btn--ghost" id="a-cancel">إلغاء</button></div></div></div>';
+}
+function saveAssess(){
+  var p=state.patient,box=document.getElementById("modal");
+  var cuffEl=box.querySelector("#a-cuff");
+  if(cuffEl){
+    var v=parseFloat(cuffEl.value);
+    if(isNaN(v)||v<0||v>60){ toast("أدخل قيمة cuff صحيحة"); return; }
+    p.cuff=Math.round(v);
+  }
+  p.amount=box.querySelector("#a-amount").value;
+  p.color=box.querySelector("#a-color").value;
+  p.texture=box.querySelector("#a-texture").value;
+  var t=parseFloat(box.querySelector("#a-temp").value);
+  var o=parseInt(box.querySelector("#a-spo2").value,10);
+  if(isNaN(t)||t<30||t>44){ toast("أدخل درجة حرارة صحيحة"); return; }
+  if(isNaN(o)||o<50||o>100){ toast("أدخل نسبة تشبّع صحيحة"); return; }
+  p.temp=t; p.spo2=o; p.mins=0; p.suctions++;
+  p.log.unshift(clock(0)+" · م. سالم — تقييم جديد: "+(p.cuff===null?"بدون كفة":"cuff "+p.cuff)+" · إفرازات "+p.amount);
+  document.getElementById("modal-root").innerHTML="";
+  toast("تم حفظ التقييم وتحديث المؤشرات");
+  render();
+}
+
+/* ---------- الأحداث ---------- */
+document.getElementById("btn-login").onclick=enter;
+document.getElementById("btn-sso").onclick=enter;
+function enter(){
+  document.getElementById("facility-name").textContent=document.getElementById("facility").value;
+  document.getElementById("view-login").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  state.view="units"; state.stack=[];
+  render();
+}
+document.addEventListener("click",function(e){
+  if(e.target.closest("[data-goback]")){ goBack(); return; }
+  var nav=e.target.closest("[data-nav]");
+  if(nav){ navigate({view:nav.dataset.nav}); return; }
+  var unit=e.target.closest("[data-dept]");
+  if(unit){ navigate({dept:deptById(unit.dataset.dept),q:"",filter:"all",view:"patients"}); return; }
+  var alertRow=e.target.closest("[data-alert]");
+  if(alertRow){
+    var parts=alertRow.dataset.alert.split(":");
+    var ad=deptById(parts[0]);
+    navigate({dept:ad,patient:ad.patients.filter(function(p){return String(p.mrn)===parts[1];})[0],view:"detail"});
+    return;
+  }
+  var nxt=e.target.closest("[data-next]");
+  if(nxt){
+    navigate({patient:state.dept.patients.filter(function(p){return String(p.mrn)===nxt.dataset.next;})[0],view:"detail"});
+    return;
+  }
+  var row=e.target.closest("[data-mrn]");
+  if(row){
+    navigate({patient:state.dept.patients.filter(function(p){return String(p.mrn)===row.dataset.mrn;})[0],view:"detail"});
+    return;
+  }
+  if(e.target.id==="btn-apply"){ applyActions(); return; }
+  if(e.target.id==="btn-assess"){ openAssess(); return; }
+  if(e.target.id==="a-save"){ saveAssess(); return; }
+  if(e.target.id==="a-cancel"||e.target.id==="modal"){ document.getElementById("modal-root").innerHTML=""; return; }
+  if(e.target.id==="btn-escalate"){
+    var p=state.patient; p.escalated=true; p.done.notify=true;
+    p.log.unshift(clock(0)+" · م. سالم — تصعيد الحالة للطبيب المناوب");
+    toast("تم تصعيد الحالة للطبيب المناوب"); render(); return;
+  }
+});
+document.addEventListener("change",function(e){
+  if(e.target.dataset&&e.target.dataset.task){
+    state.patient.done[e.target.dataset.task]=e.target.checked; render(); return;
+  }
+  if(e.target.id==="filter"){ state.filter=e.target.value; render(); return; }
+});
+document.addEventListener("input",function(e){
+  if(e.target.id==="q"){
+    state.q=e.target.value; render();
+    var f=document.getElementById("q"); if(f){ f.focus(); f.setSelectionRange(f.value.length,f.value.length); }
+  }
+});
+</script>
+</body>
+</html>
